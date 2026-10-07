@@ -1,0 +1,64 @@
+My Project Tasks Free — Source-Available License 1.0
+
+Copyright (c) 2026 Mikhail Novikov
+All rights reserved except as expressly granted below.
+
+1. Scope
+This license applies to My Project Tasks Free source code, compiled plugin,
+and accompanying documentation (the "Software"). Separately licensed
+third-party components remain governed by their own licenses. This license
+does not grant rights to any separately distributed Pro edition.
+
+2. Permissions
+You may, without payment:
+(a) use the Software for personal, educational, nonprofit, or internal
+    business purposes, including in your paid professional work;
+(b) inspect, copy, build, and modify the Software;
+(c) distribute the Software or modifications free of charge, provided that
+    you include this license and the copyright notice, clearly identify
+    modifications, and do not imply endorsement by the copyright holder.
+Recipients must receive the same permissions and restrictions for the
+Software and modifications of it. No source-disclosure obligation is imposed.
+
+3. Restrictions on sale
+Without prior written permission from the copyright holder, you may not:
+(a) sell, sublicense for a fee, or charge for access to or distribution of
+    the Software, its source code, compiled copies, or modifications;
+(b) include the Software or modifications in a paid product or bundle, or
+    provide them through a paid subscription or hosted service;
+(c) remove or obscure copyright or license notices.
+These restrictions apply whether the Software is renamed or repackaged.
+Ordinary use of the Software to perform paid work is expressly allowed.
+Charging for independent consulting, training, installation, or support is
+allowed only if access to and use of the Software is available free of
+charge and the fee is not a disguised charge for the Software itself.
+Your own notes, tasks, exported data, and other user-created content are
+not covered by these restrictions merely because you use the Software.
+
+4. Distribution by Obsidian and GitHub
+The operators of Obsidian and GitHub may host, review, copy, and distribute
+the Software and updates without charging specifically for the Software,
+including through their plugin directory, application, and release hosting.
+General fees for their platforms do not by themselves violate this license.
+
+5. Rights reserved
+No ownership, trademark rights, or rights to separately licensed software
+are transferred. The copyright holder may distribute their own Software
+under other terms, including commercial terms. Rights not expressly granted
+are reserved.
+
+6. Termination
+Your permissions terminate automatically if you violate this license.
+They are reinstated if you cure the violation within 30 days after first
+becoming aware of it, unless the copyright holder has previously terminated
+your permissions for an earlier violation.
+
+7. Disclaimer
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+AND NONINFRINGEMENT. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW,
+THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+This is a custom source-available license, not the MIT License and not
+an OSI-approved open-source license.
