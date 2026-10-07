@@ -1,0 +1,9 @@
+{
+  "id": "my-project-tasks",
+  "name": "My Project Tasks Free",
+  "version": "2.2.1",
+  "minAppVersion": "1.6.6",
+  "description": "Local task board with projects, planned dates, checklists, recurring tasks, search and six interface languages.",
+  "author": "Mikhail Novikov",
+  "isDesktopOnly": false
+}
