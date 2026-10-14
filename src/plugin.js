@@ -182,11 +182,11 @@ class MyProjectTasksFree extends Plugin {
  async read(file,fresh=false){if(!file||!(file instanceof TFile))throw Error(this.t('fileNotFound'));if(!fresh&&this.cache.has(file.path))return this.cache.get(file.path);
   const raw=await this.app.vault.read(file),{fm,body}=split(raw),record={...C.normalize(fm,file.path,body),fm,raw};this.cache.set(file.path,record);return record;}
  async entity(path){const f=this.app.vault.getAbstractFileByPath(path);return this.read(f,true);}
- async load(type){const files=this.app.vault.getMarkdownFiles().filter(f=>!f.path.startsWith('MyProjectTasksBackup'));
+ async loadEntities(type){const files=this.app.vault.getMarkdownFiles().filter(f=>!f.path.startsWith('MyProjectTasksBackup'));
   const out=[];let index=0;const worker=async()=>{while(index<files.length){const file=files[index++];const prefix=(type==='task'?this.settings.tasksFolder:this.settings.projectsFolder)+'/';const fm=this.app.metadataCache.getFileCache(file)?.frontmatter;
    if(!file.path.startsWith(prefix)&&fm?.type!==type)continue;
    try{const e=await this.read(file);if(e.fm.type===type)out.push(e);}catch(e){if(!this.reported.has(file.path)){this.reported.add(file.path);new Notice(`${this.t('readError')}: ${file.path}${e.mptKey?' — '+this.t(e.mptKey):''}`,8000);}console.error(e);}}};await Promise.all(Array.from({length:8},worker));return out;}
- loadTasks(){return this.load('task');}loadProjects(){return this.load('project').then(xs=>xs.sort((a,b)=>a.title.localeCompare(b.title)));}
+ loadTasks(){return this.loadEntities('task');}loadProjects(){return this.loadEntities('project').then(xs=>xs.sort((a,b)=>a.title.localeCompare(b.title)));}
  async backup(record){let hash=14695981039346656037n;for(const char of record.path){hash^=BigInt(char.codePointAt(0));hash=BigInt.asUintN(64,hash*1099511628211n);}const base=`${BACKUP}/${hash.toString(16)}.json`;const existing=this.app.vault.getAbstractFileByPath(base);if(existing){const saved=JSON.parse(await this.app.vault.read(existing));if(saved.originalPath!==record.path)throw Error(this.t('backupConflict'));return;}await this.folder(BACKUP);await this.app.vault.create(base,JSON.stringify({originalPath:record.path,createdAt:new Date().toISOString(),content:record.raw},null,2));}
  async write(record,changes,body){await this.backup(record);const file=this.app.vault.getAbstractFileByPath(record.path);if(!(file instanceof TFile))throw Error(this.t('fileNotFound'));
   await this.app.vault.process(file,raw=>{if(raw!==record.raw)throw Error(this.t('conflict'));const current=split(raw);return encode({...current.fm,...changes},body===undefined?current.body:body);});this.cache.delete(record.path);return this.entity(record.path);}
