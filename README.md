@@ -1,6 +1,6 @@
-# My Project Tasks Free 2.2.1
+# My Project Tasks Free 2.2.2
 
-Installable multilingual Free edition based on Free 2.2.0, with a simplified board and recurring-task history. Tasks and projects remain Markdown files in your Obsidian vault. No account, network connection, license activation or artificial task limits.
+Installable multilingual Free edition based on Free 2.2.0, with a simplified board and recurring-task history. Version 2.2.2 fixes clean-install/startup loading in Obsidian by avoiding a collision with the Plugin lifecycle load() method. Tasks and projects remain Markdown files in your Obsidian vault. No account, network connection, license activation or artificial task limits.
 
 ## Install / upgrade
 
