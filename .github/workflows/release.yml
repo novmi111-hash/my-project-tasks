@@ -1,0 +1,40 @@
+name: Verify and publish plugin
+on:
+  push:
+    branches: [main]
+    paths:
+      - manifest.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: plugin-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build and verify
+        run: |
+          node build.cjs
+          node --test tests/*.test.cjs
+          git diff --exit-code -- my-project-tasks/main.js
+      - name: Publish version with installable assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./manifest.json').version")
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "Release $version already exists; leaving it unchanged."
+            exit 0
+          fi
+          node -e 'const fs=require("fs");const version=require("./manifest.json").version;const text=fs.readFileSync("CHANGELOG.md","utf8");const section=text.split(/^## /m).find(s=>s.startsWith(version+" "));if(!section)throw Error("Missing changelog");fs.writeFileSync("release-notes.md",section.slice(section.indexOf("\n")+1).trim()+"\n\nAutomated tests passed. Native Obsidian desktop/mobile execution is not verified by this workflow.\n");'
+          gh release create "$version" my-project-tasks/main.js my-project-tasks/manifest.json my-project-tasks/styles.css --target "$GITHUB_SHA" --title "My Project Tasks Free $version" --notes-file release-notes.md --draft
+          gh release edit "$version" --draft=false --latest

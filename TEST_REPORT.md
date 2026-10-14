@@ -1,3 +1,7 @@
+# Verification update — 2.2.2 (2026-10-14)
+
+43 automated tests passed, including fresh lifecycle startup and release metadata consistency. The startup regression test was also checked against the former load override and correctly failed. Rebuilding main.js reproduces the committed bundle. Native Obsidian desktop/mobile execution remains unverified here. The older report below describes the 2.2.1 baseline.
+
 # Проверка My Project Tasks Free 2.2.1
 
 Дата: 7 октября 2026 года.
