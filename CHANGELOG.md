@@ -1,5 +1,11 @@
 # My Project Tasks Free
 
+## 2.2.2 — 2026-10-14
+
+- Исправлена критическая ошибка запуска после чистой установки/переустановки: внутренний метод загрузки задач больше не переопределяет lifecycle-метод `Plugin.load()` Obsidian.
+- Устранена ошибка `Cannot read properties of undefined (reading 'projectsFolder')` при включении плагина.
+- Синхронизированы исходники, собранный `main.js` и manifest версии 2.2.2.
+
 ## 2.2.1 — 2026-10-07
 
 - Добавлены Español, Deutsch, Português (Brasil), Français: всего шесть языков.
