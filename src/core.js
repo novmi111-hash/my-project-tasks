@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.2.2';
+const VERSION = '2.3.0';
 const RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
 const pad = n => String(n).padStart(2, '0');
 function iso(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
@@ -12,6 +12,8 @@ function date(value) {
   return iso(d) === s ? s : '';
 }
 function asDate(s) { const [y,m,d]=date(s).split('-').map(Number); return new Date(y,m-1,d,12); }
+function addDays(value,n){const d=asDate(value);d.setDate(d.getDate()+n);return iso(d);}
+function dayDiff(a,b){const utc=s=>{const d=asDate(s);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());};return Math.round((utc(b)-utc(a))/86400000);}
 function key(v) {
   const s=String(v?.path || v || '').trim();
   const m=/^\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]$/.exec(s);
@@ -58,4 +60,4 @@ function movement(task, target, today=iso(), restore=false) {
 }
 function safeName(s) {return String(s||'Task').replace(/[\\/:*?"<>|#^[\]]/g,'-').replace(/\s+/g,' ').replace(/[. ]+$/,'').slice(0,100)||'Task';}
 function id() {return globalThis.crypto?.randomUUID?.() || `mpt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;}
-module.exports={VERSION,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};
+module.exports={VERSION,addDays,dayDiff,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};

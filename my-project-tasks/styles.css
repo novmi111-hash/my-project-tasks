@@ -3,3 +3,17 @@
 @media(max-width:700px){.mpt-board{grid-template-columns:repeat(3,minmax(230px,1fr))}.mpt-topbar{gap:5px}.mpt-root{padding:10px!important}.mpt-version{font-size:10px}.mpt-toolbar{gap:6px}.mpt-toolbar select{flex:1 1 120px}}
 /* Localized labels may be longer than the original English/Russian text. */
 .mpt-column-head h3{min-width:0;overflow-wrap:anywhere}.mpt-group{height:auto!important;min-height:28px;overflow-wrap:anywhere}.mpt-card-actions>button{overflow-wrap:anywhere}.mpt-field>span{overflow-wrap:anywhere}
+
+/* Free 2.3: completion, quick entry and monthly planning. */
+.mpt-root .mpt-card.is-completed .mpt-card-title,.mpt-root .mpt-calendar-task.is-completed{text-decoration:line-through;color:var(--text-muted)}
+.mpt-root .mpt-deadline-late{color:var(--text-error);font-weight:600}
+.mpt-quick-add{display:flex;gap:8px}.mpt-quick-add input{flex:1;min-width:0}
+.mpt-deadline-editor{margin-bottom:14px}.mpt-deadline-editor summary{cursor:pointer;margin-bottom:10px}
+.mpt-calendar{overflow:auto;min-height:0}.mpt-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(95px,1fr));gap:4px;min-width:690px}
+.mpt-weekday{padding:8px;text-align:center;color:var(--text-muted);font-size:12px}
+.mpt-calendar-day{min-height:115px;padding:6px;border:1px solid var(--background-modifier-border);border-radius:6px;background:var(--background-primary)}
+.mpt-calendar-day.is-outside{background:var(--background-secondary)}.mpt-calendar-day.is-outside .mpt-day-number{color:var(--text-muted)}
+.mpt-calendar-day.is-today{border:2px solid var(--interactive-accent)}
+.mpt-root button.mpt-day-number{display:block;box-shadow:none;background:transparent;border:0;padding:3px 7px;height:auto;min-height:28px}
+.mpt-root button.mpt-calendar-task{display:block;width:100%;height:auto;min-height:28px;text-align:left;white-space:normal;overflow-wrap:anywhere;margin:5px 0;padding:5px 6px;border-left:3px solid #64748b;font-size:12px;line-height:1.4}
+.mpt-month-title{font-size:16px;margin:6px 8px}.mpt-calendar .mpt-toolbar{margin-bottom:12px}

@@ -2,7 +2,7 @@
 const {Plugin,ItemView,PluginSettingTab,Setting,Modal,Notice,Menu,TFile,normalizePath,parseYaml,stringifyYaml,getLanguage}=require('obsidian');
 const C=(()=>{const module={exports:{}};
 'use strict';
-const VERSION = '2.2.2';
+const VERSION = '2.3.0';
 const RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
 const pad = n => String(n).padStart(2, '0');
 function iso(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
@@ -15,6 +15,8 @@ function date(value) {
   return iso(d) === s ? s : '';
 }
 function asDate(s) { const [y,m,d]=date(s).split('-').map(Number); return new Date(y,m-1,d,12); }
+function addDays(value,n){const d=asDate(value);d.setDate(d.getDate()+n);return iso(d);}
+function dayDiff(a,b){const utc=s=>{const d=asDate(s);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate());};return Math.round((utc(b)-utc(a))/86400000);}
 function key(v) {
   const s=String(v?.path || v || '').trim();
   const m=/^\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]$/.exec(s);
@@ -61,7 +63,7 @@ function movement(task, target, today=iso(), restore=false) {
 }
 function safeName(s) {return String(s||'Task').replace(/[\\/:*?"<>|#^[\]]/g,'-').replace(/\s+/g,' ').replace(/[. ]+$/,'').slice(0,100)||'Task';}
 function id() {return globalThis.crypto?.randomUUID?.() || `mpt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;}
-module.exports={VERSION,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};
+module.exports={VERSION,addDays,dayDiff,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};
 
 return module.exports;})();
 const STRINGS=(()=>{const module={exports:{}};
@@ -92,6 +94,8 @@ de:{invalidYaml:'Ungültige YAML-Eigenschaften in der Datei.',fileNotFound:'Date
 fr:{invalidYaml:'Propriétés YAML non valides dans le fichier.',fileNotFound:'Fichier introuvable.',backupConflict:'Conflit du chemin de sauvegarde.',recurrenceConflict:'Le chemin de l’occurrence suivante est utilisé par un autre fichier.'}
 };
 for(const lang of Object.keys(strings))Object.assign(strings[lang],diagnostics[lang]);
+const planningStrings={"en": {"calendar": "Calendar", "addDeadline": "Add a deadline", "deadline": "Deadline", "undo": "Undo last change", "undoConflict": "Cannot undo: affected files have changed.", "tomorrow": "Tomorrow", "inWeek": "In one week", "chooseDate": "Choose date", "duplicate": "Duplicate", "copySuffix": "(copy)", "quickAdd": "New task title — Enter to add", "allPriorities": "All priorities", "previousMonth": "Previous month", "nextMonth": "Next month", "calendarBy": "Calendar by", "hideCompleted": "Hide completed", "calendarHint": "Drag a task to change the selected date field. Use the task menu to choose a date without dragging.", "withoutDate": "Without selected date"}, "ru": {"calendar": "Календарь", "addDeadline": "Добавить крайний срок", "deadline": "Крайний срок", "undo": "Отменить изменение", "undoConflict": "Отмена невозможна: затронутые файлы изменились.", "tomorrow": "Завтра", "inWeek": "Через неделю", "chooseDate": "Выбрать дату", "duplicate": "Дублировать", "copySuffix": "(копия)", "quickAdd": "Название задачи — Enter для добавления", "allPriorities": "Все приоритеты", "previousMonth": "Предыдущий месяц", "nextMonth": "Следующий месяц", "calendarBy": "Календарь по", "hideCompleted": "Скрыть выполненные", "calendarHint": "Перетаскивание меняет выбранную дату. Для переноса без перетаскивания используйте меню задачи.", "withoutDate": "Без выбранной даты"}, "es": {"calendar": "Calendario", "addDeadline": "Añadir fecha límite", "deadline": "Fecha límite", "undo": "Deshacer último cambio", "undoConflict": "No se puede deshacer: los archivos han cambiado.", "tomorrow": "Mañana", "inWeek": "En una semana", "chooseDate": "Elegir fecha", "duplicate": "Duplicar", "copySuffix": "(copia)", "quickAdd": "Título de tarea — Intro para añadir", "allPriorities": "Todas las prioridades", "previousMonth": "Mes anterior", "nextMonth": "Mes siguiente", "calendarBy": "Calendario por", "hideCompleted": "Ocultar completadas", "calendarHint": "Arrastra una tarea para cambiar la fecha seleccionada. También puedes usar el menú de la tarea.", "withoutDate": "Sin fecha seleccionada"}, "de": {"calendar": "Kalender", "addDeadline": "Frist hinzufügen", "deadline": "Frist", "undo": "Letzte Änderung rückgängig", "undoConflict": "Rückgängig nicht möglich: Dateien wurden geändert.", "tomorrow": "Morgen", "inWeek": "In einer Woche", "chooseDate": "Datum auswählen", "duplicate": "Duplizieren", "copySuffix": "(Kopie)", "quickAdd": "Aufgabentitel — Enter zum Hinzufügen", "allPriorities": "Alle Prioritäten", "previousMonth": "Voriger Monat", "nextMonth": "Nächster Monat", "calendarBy": "Kalender nach", "hideCompleted": "Erledigte ausblenden", "calendarHint": "Ziehen ändert das ausgewählte Datum. Alternativ das Aufgabenmenü verwenden.", "withoutDate": "Ohne ausgewähltes Datum"}, "pt-BR": {"calendar": "Calendário", "addDeadline": "Adicionar prazo", "deadline": "Prazo", "undo": "Desfazer última alteração", "undoConflict": "Não é possível desfazer: os arquivos foram alterados.", "tomorrow": "Amanhã", "inWeek": "Em uma semana", "chooseDate": "Escolher data", "duplicate": "Duplicar", "copySuffix": "(cópia)", "quickAdd": "Título da tarefa — Enter para adicionar", "allPriorities": "Todas as prioridades", "previousMonth": "Mês anterior", "nextMonth": "Próximo mês", "calendarBy": "Calendário por", "hideCompleted": "Ocultar concluídas", "calendarHint": "Arraste a tarefa para alterar a data selecionada. Também é possível usar o menu da tarefa.", "withoutDate": "Sem data selecionada"}, "fr": {"calendar": "Calendrier", "addDeadline": "Ajouter une échéance", "deadline": "Échéance", "undo": "Annuler la dernière modification", "undoConflict": "Impossible d’annuler : les fichiers ont changé.", "tomorrow": "Demain", "inWeek": "Dans une semaine", "chooseDate": "Choisir une date", "duplicate": "Dupliquer", "copySuffix": "(copie)", "quickAdd": "Titre de la tâche — Entrée pour ajouter", "allPriorities": "Toutes les priorités", "previousMonth": "Mois précédent", "nextMonth": "Mois suivant", "calendarBy": "Calendrier par", "hideCompleted": "Masquer les tâches terminées", "calendarHint": "Glissez une tâche pour modifier la date sélectionnée. Vous pouvez aussi utiliser le menu de la tâche.", "withoutDate": "Sans date sélectionnée"}};
+for(const lang of Object.keys(strings))Object.assign(strings[lang],planningStrings[lang]);
 module.exports=strings;
 
 return module.exports;})();
@@ -138,6 +142,7 @@ class TaskModal extends Modal {
   if(task.project&&!pairs.some(x=>x[0]===C.key(task.project))) pairs.push([C.key(task.project),C.key(task.project)]);
   options(project,pairs,C.key(task.project));
   const date=labelInput(c,t('date'),'input','date');date.value=task.date||'';
+  const deadlineBox=el(c,'details','mpt-deadline-editor');deadlineBox.open=!!task.deadline;el(deadlineBox,'summary','',t('addDeadline'));const deadline=labelInput(deadlineBox,t('deadline'),'input','date');deadline.value=C.date(task.deadline);
   const priority=labelInput(c,t('priority'),'select');options(priority,['high','medium','low'].map(x=>[x,t(x)]),task.priority||p.settings.defaultPriority);
   const rec=labelInput(c,t('recurrence'),'select');const rp=C.RECURRENCES.map(x=>[x,t(x)]);if(task.recurrence&&!C.RECURRENCES.includes(task.recurrence))rp.push([task.recurrence,task.recurrence]);options(rec,rp,task.recurrence||'none');
   rec.disabled=!!task.completed;el(c,'p','mpt-help',task.completed?t('readOnlyHistory'):t('repeatHint'));
@@ -151,12 +156,16 @@ class TaskModal extends Modal {
   const a=el(c,'div','mpt-actions');button(a,t('cancel'),()=>this.close());
   const save=button(a,t('save'),()=>p.run(async()=>{
    if(!title.value.trim())return new Notice(t('titleRequired'));
-   if(date.value&&!C.date(date.value))return new Notice(t('badDate'));
+   if((deadline.value&&!C.date(deadline.value))||(date.value&&!C.date(date.value)))return new Notice(t('badDate'));
    if(rec.value!=='none'&&!date.value&&(!this.task||rec.value!==this.task.recurrence))return new Notice(t('dateRequired'));
    save.disabled=true;
-   try {await p.saveTask(this.task,{title:title.value.trim(),project:project.value?`[[${project.value}]]`:'',date:date.value,priority:priority.value,recurrence:rec.value,subtasks:subs.filter(x=>x.text.trim()).map(x=>({...x,text:x.text.trim()}))},desc.value);this.close();p.refreshViews();}finally{save.disabled=false;}
+   try {await p.saveTask(this.task,{title:title.value.trim(),project:project.value?`[[${project.value}]]`:'',date:date.value,deadline:deadline.value,priority:priority.value,recurrence:rec.value,subtasks:subs.filter(x=>x.text.trim()).map(x=>({...x,text:x.text.trim()}))},desc.value);this.close();p.refreshViews();}finally{save.disabled=false;}
   }),'mpt-btn mod-cta');title.focus();
  });}
+}
+class DateModal extends Modal {
+ constructor(plugin,task){super(plugin.app);this.plugin=plugin;this.task=task;}
+ onOpen(){const p=this.plugin,c=this.contentEl;c.empty();el(c,'h2','',p.t('chooseDate'));const input=labelInput(c,p.t('date'),'input','date');input.value=this.task.date||p.today();button(c,p.t('save'),()=>p.run(async()=>{await p.setTaskDate(this.task.path,input.value);this.close();}));button(c,p.t('cancel'),()=>this.close());}
 }
 class ProjectModal extends Modal {
  constructor(plugin,project=null){super(plugin.app);Object.assign(this,{plugin,project});}
@@ -168,7 +177,7 @@ class ProjectModal extends Modal {
  }
 }
 class Board extends ItemView {
- constructor(leaf,plugin){super(leaf);this.plugin=plugin;this.mode='tasks';this.filter={search:'',project:'',sort:'manual'};this.doneLimit=50;this.collapsed={};this.seq=0;}
+ constructor(leaf,plugin){super(leaf);this.plugin=plugin;this.mode='tasks';this.filter={search:'',project:'',sort:'manual'};this.doneLimit=50;this.collapsed={};this.seq=0;this.calendarMonth=plugin.today().slice(0,7);this.calendarField='date';this.hideCompleted=true;}
  getViewType(){return VIEW;}getDisplayText(){return 'My Project Tasks Free';}getIcon(){return 'check-square';}
  async onOpen(){await this.render();}
  async onClose(){clearTimeout(this.searchTimer);this.seq++;}
@@ -178,18 +187,20 @@ class Board extends ItemView {
   this.tasks=tasks;this.projects=projects;const root=this.containerEl.children[1];
   const active=root.ownerDocument.activeElement,focus=active?.classList.contains('mpt-search'),pos=focus?active.selectionStart:null;
   const scrolls=Array.from(root.querySelectorAll('.mpt-column-body')).map(x=>x.scrollTop);root.empty();root.addClass('mpt-root');const t=k=>this.plugin.t(k);
-  const top=el(root,'div','mpt-topbar');for(const mode of ['tasks','projects'])button(top,t(mode),()=>{this.mode=mode;this.render();},`mpt-btn ${this.mode===mode?'mod-cta':''}`);
+  const top=el(root,'div','mpt-topbar');for(const mode of ['tasks','calendar','projects'])button(top,t(mode),()=>{this.mode=mode;this.render();},`mpt-btn ${this.mode===mode?'mod-cta':''}`);
   el(top,'span','mpt-version',`Free ${C.VERSION}`);button(top,t('newTask'),()=>new TaskModal(this.plugin).open(),'mpt-btn mod-cta');
-  this.content=el(root,'div','mpt-content');if(this.mode==='projects')this.renderProjects();else{this.renderFilters();this.board=el(this.content,'div','mpt-board');this.renderBoard();}
+  const undo=button(top,t('undo'),()=>this.plugin.run(()=>this.plugin.undo()));undo.disabled=!this.plugin.undoFrame;
+  this.content=el(root,'div','mpt-content');if(this.mode==='projects')this.renderProjects();else{this.renderFilters();if(this.mode==='calendar'){this.calendar=el(this.content,'div','mpt-calendar');this.renderCalendar();}else{this.renderQuickAdd();this.board=el(this.content,'div','mpt-board');this.renderBoard();}}
   root.querySelectorAll('.mpt-column-body').forEach((x,i)=>x.scrollTop=scrolls[i]||0);
   if(focus){const s=root.querySelector('.mpt-search');s?.focus();try{s?.setSelectionRange(pos,pos);}catch{}}
  }catch(e){this.plugin.error(e);const root=this.containerEl.children[1];root.empty();el(root,'p','mpt-error',this.plugin.t('error'));button(root,this.plugin.t('retry'),()=>this.render());}}
  renderFilters(){const t=k=>this.plugin.t(k),bar=el(this.content,'div','mpt-toolbar');
-  const search=el(bar,'input','mpt-search');search.type='search';search.placeholder=t('search');search.setAttribute('aria-label',t('search'));search.value=this.filter.search;search.oninput=()=>{this.filter.search=search.value;this.doneLimit=50;clearTimeout(this.searchTimer);this.searchTimer=setTimeout(()=>this.renderBoard(),100);};
-  const pr=el(bar,'select');pr.setAttribute('aria-label',t('project'));options(pr,[['',t('allProjects')],['__none',t('noProject')],...this.projects.map(p=>[C.key(p.path),p.title])],this.filter.project);pr.onchange=()=>{this.filter.project=pr.value;this.doneLimit=50;this.renderBoard();};
-  const sort=el(bar,'select');sort.setAttribute('aria-label',t('manual'));options(sort,[['manual',t('manual')],['date',t('byDate')],['priority',t('byPriority')]],this.filter.sort);sort.onchange=()=>{this.filter.sort=sort.value;this.renderBoard();};
+  const search=el(bar,'input','mpt-search');search.type='search';search.placeholder=t('search');search.setAttribute('aria-label',t('search'));search.value=this.filter.search;search.oninput=()=>{this.filter.search=search.value;this.doneLimit=50;clearTimeout(this.searchTimer);this.searchTimer=setTimeout(()=>this.renderResults(),100);};
+  const pr=el(bar,'select');pr.setAttribute('aria-label',t('project'));options(pr,[['',t('allProjects')],['__none',t('noProject')],...this.projects.map(p=>[C.key(p.path),p.title])],this.filter.project);pr.onchange=()=>{this.filter.project=pr.value;this.doneLimit=50;this.renderResults();};
+  const priority=el(bar,'select');priority.setAttribute('aria-label',t('priority'));options(priority,[['',t('allPriorities')],...['high','medium','low'].map(x=>[x,t(x)])],this.filter.priority);priority.onchange=()=>{this.filter.priority=priority.value;this.renderResults();};
+  const sort=el(bar,'select');sort.setAttribute('aria-label',t('manual'));options(sort,[['manual',t('manual')],['date',t('byDate')],['priority',t('byPriority')]],this.filter.sort);sort.onchange=()=>{this.filter.sort=sort.value;this.renderResults();};
  }
- filtered(){const q=this.filter.search.trim().toLocaleLowerCase();return this.tasks.filter(x=>(!q||`${x.title} ${x.body} ${x.subtasks.map(s=>s.text).join(' ')}`.toLocaleLowerCase().includes(q))&&(!this.filter.project||(this.filter.project==='__none'?!x.project:C.key(x.project)===this.filter.project)));}
+ filtered(){const q=this.filter.search.trim().toLocaleLowerCase();return this.tasks.filter(x=>(!this.filter.priority||x.priority===this.filter.priority)&&(!q||`${x.title} ${x.body} ${x.subtasks.map(s=>s.text).join(' ')}`.toLocaleLowerCase().includes(q))&&(!this.filter.project||(this.filter.project==='__none'?!x.project:C.key(x.project)===this.filter.project)));}
  ordered(items,list){return [...items].sort((a,b)=>{
   if(list==='done')return String(b.completedAt||b.archivedAt||'').localeCompare(String(a.completedAt||a.archivedAt||''))||(b.sortOrder-a.sortOrder);
   if(this.filter.sort==='date')return (a.date||'9999').localeCompare(b.date||'9999')||a.sortOrder-b.sortOrder;
@@ -221,6 +232,7 @@ class Board extends ItemView {
   button(card,task.title,()=>new TaskModal(p,task).open(),'mpt-card-title');
   const meta=el(card,'div','mpt-meta');if(project)el(meta,'span','',project.title);else if(task.project)el(meta,'span','',C.key(task.project));
   el(meta,'span',`mpt-priority mpt-priority-${task.priority}`,t(task.priority));if(task.date)el(meta,'span','',p.formatDate(task.date));
+  if(C.date(task.deadline))el(meta,'span',!task.completed&&task.deadline<p.today()?'mpt-deadline-late':'',`${t('deadline')}: ${p.formatDate(task.deadline)}`);
   if(task.completedAt&&task.completed)el(meta,'span','',`${t('completedAt')}: ${p.formatDate(task.completedAt)}`);
   if(task.recurrence!=='none')el(meta,'span','',`↻ ${C.RECURRENCES.includes(task.recurrence)?t(task.recurrence):task.recurrence}`);
   if(task.archived)el(meta,'span','',t('archived'));if(task.mptNextPending)el(card,'p','mpt-error',t('pendingRepair'));
@@ -232,8 +244,28 @@ class Board extends ItemView {
   card.oncontextmenu=e=>{e.preventDefault();this.taskMenu(e,task);};
  }
  taskMenu(event,task){const p=this.plugin,t=k=>p.t(k),m=new Menu();const add=(name,fn)=>m.addItem(x=>x.setTitle(t(name)).onClick(()=>p.run(fn)));
-  add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));add('plusDay',()=>p.shiftDay(task.path));}
-  add('openNote',()=>p.app.workspace.openLinkText(task.path,'',false));if(task.source)add('openSource',()=>p.openSource(task));add('delete',()=>p.confirmDeleteTask(task));m.showAtMouseEvent(event);
+  add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));add('tomorrow',()=>p.setTaskDate(task.path,C.addDays(p.today(),1)));add('inWeek',()=>p.setTaskDate(task.path,C.addDays(p.today(),7)));add('chooseDate',()=>new DateModal(p,task).open());}
+  add('duplicate',()=>p.duplicateTask(task.path));add('openNote',()=>p.app.workspace.openLinkText(task.path,'',false));if(task.source)add('openSource',()=>p.openSource(task));add('delete',()=>p.confirmDeleteTask(task));m.showAtMouseEvent(event);
+ }
+ renderResults(){if(this.mode==='calendar')this.renderCalendar();else this.renderBoard();}
+ renderQuickAdd(){const p=this.plugin,t=k=>p.t(k),row=el(this.content,'div','mpt-quick-add');const input=el(row,'input');input.placeholder=t('quickAdd');input.setAttribute('aria-label',t('quickAdd'));
+  let busy=false;const add=async()=>{if(busy||!input.value.trim())return;busy=true;input.disabled=true;try{await p.saveTask(null,{title:input.value.trim(),date:'',deadline:'',project:this.filter.project&&this.filter.project!=='__none'?`[[${this.filter.project}]]`:'',priority:this.filter.priority||p.settings.defaultPriority,recurrence:'none',subtasks:[]},'');input.value='';}finally{busy=false;input.disabled=false;}};
+  input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();return p.run(add);}};button(row,t('newTask'),()=>p.run(add));
+ }
+ renderCalendar(){if(!this.calendar)return;const p=this.plugin,t=k=>p.t(k),host=this.calendar;host.empty();const bar=el(host,'div','mpt-toolbar');
+  const month=C.asDate(this.calendarMonth+'-01');const change=delta=>{month.setMonth(month.getMonth()+delta);this.calendarMonth=C.iso(month).slice(0,7);this.renderCalendar();};
+  button(bar,'‹',()=>change(-1)).setAttribute('aria-label',t('previousMonth'));button(bar,t('today'),()=>{this.calendarMonth=p.today().slice(0,7);this.renderCalendar();});button(bar,'›',()=>change(1)).setAttribute('aria-label',t('nextMonth'));
+  el(bar,'h3','mpt-month-title',month.toLocaleDateString(p.lang(),{month:'long',year:'numeric'}));
+  const field=el(bar,'select');field.setAttribute('aria-label',t('calendarBy'));options(field,[['date',t('date')],['deadline',t('deadline')]],this.calendarField);field.onchange=()=>{this.calendarField=field.value;this.renderCalendar();};
+  const hide=el(bar,'label','mpt-check'),cb=el(hide,'input');cb.type='checkbox';cb.checked=this.hideCompleted;el(hide,'span','',t('hideCompleted'));cb.onchange=()=>{this.hideCompleted=cb.checked;this.renderCalendar();};
+  const grid=el(host,'div','mpt-calendar-grid');for(let i=0;i<7;i++)el(grid,'div','mpt-weekday',new Date(2026,0,5+i,12).toLocaleDateString(p.lang(),{weekday:'short'}));
+  const tasks=this.filtered().filter(x=>!this.hideCompleted||!x.completed),start=C.asDate(this.calendarMonth+'-01');start.setDate(start.getDate()-(start.getDay()+6)%7);
+  for(let i=0;i<42;i++){const day=C.addDays(C.iso(start),i),cell=el(grid,'section',`mpt-calendar-day${day.slice(0,7)!==this.calendarMonth?' is-outside':''}${day===p.today()?' is-today':''}`);cell.dataset.date=day;
+   const open=()=>new TaskModal(p,null,{date:day,...(this.calendarField==='deadline'?{deadline:day}:{})}).open();button(cell,String(Number(day.slice(-2))),open,'mpt-day-number').setAttribute('aria-label',`${t('newTask')}: ${p.formatDate(day)}`);cell.onclick=e=>{if(e.target===cell)open();};
+   cell.ondragover=e=>{if(e.dataTransfer?.types?.includes('text/mpt-task')){e.preventDefault();cell.classList.add('mpt-dragover');}};cell.ondragleave=()=>cell.classList.remove('mpt-dragover');cell.ondrop=e=>{e.preventDefault();e.stopPropagation();cell.classList.remove('mpt-dragover');const path=e.dataTransfer.getData('text/mpt-task');if(path)return p.run(async()=>{await p.setTaskDate(path,day,this.calendarField);await this.render();});};
+   for(const task of this.ordered(tasks.filter(x=>C.date(x[this.calendarField])===day),'calendar')){const item=button(cell,task.title,()=>new TaskModal(p,task).open(),`mpt-calendar-task${task.completed?' is-completed':''}`);item.title=task.title;const project=this.projects.find(x=>C.key(x.path)===C.key(task.project));item.style.borderLeftColor=project?.color||'#64748b';item.draggable=!task.completed;item.ondragstart=e=>{e.dataTransfer.setData('text/mpt-task',task.path);e.dataTransfer.effectAllowed='move';};item.oncontextmenu=e=>{e.preventDefault();this.taskMenu(e,task);};}
+  }
+  el(host,'p','mpt-help',t('calendarHint'));const undated=tasks.filter(x=>!C.date(x[this.calendarField]));el(host,'p','mpt-help',`${t('withoutDate')}: ${undated.length}`);
  }
  renderProjects(){const p=this.plugin,t=k=>p.t(k);button(this.content,t('newProject'),()=>new ProjectModal(p).open(),'mpt-btn mod-cta');const grid=el(this.content,'div','mpt-project-grid');if(!this.projects.length)el(grid,'p','',t('noProjects'));
   for(const project of this.projects){const card=el(grid,'article','mpt-project-card');card.style.borderTopColor=project.color||'#4f46e5';button(card,project.title,()=>{this.mode='tasks';this.filter.project=C.key(project.path);this.render();},'mpt-card-title');
@@ -276,7 +308,18 @@ class MyProjectTasksFree extends Plugin {
  today(){return C.iso();}formatDate(s){const d=C.date(s);return d?L.formatDate(d,this.lang()):'';}
  error(e){console.error('My Project Tasks Free:',e);new Notice(`${this.t('error')}: ${e?.mptKey?this.t(e.mptKey):e?.message||e}`,8000);}
  async run(fn){try{return await fn();}catch(e){this.error(e);}}
- serial(fn){const work=this.queue.then(fn);this.queue=work.catch(()=>{});return work;}
+ serial(fn,track=true){const work=this.queue.then(async()=>{if(track){this.undoFrame=null;this.journal=new Map();}try{const result=await fn();if(track&&this.journal.size)this.undoFrame=[...this.journal.values()];return result;}finally{if(track){this.journal=null;this.refreshViews();}}});this.queue=work.catch(()=>{});return work;}
+ recordChange(path,before,after){if(!this.journal)return;const entry=this.journal.get(path);this.journal.set(path,{path,before:entry?entry.before:before,after});}
+ async undo(){return this.serial(async()=>{const frame=this.undoFrame;if(!frame)return;
+  const current=[];for(const entry of frame){const file=this.app.vault.getAbstractFileByPath(entry.path);if(!(file instanceof TFile)||await this.app.vault.read(file)!==entry.after)throw Error(this.t('undoConflict'));current.push({...entry,file});}
+  // A task action creates at most one new file (duplicate or recurring successor).
+  const restored=[];try{for(const entry of current.filter(x=>x.before!==null)){await this.app.vault.process(entry.file,raw=>{if(raw!==entry.after)throw Error(this.t('undoConflict'));return entry.before;});restored.push(entry);}
+   for(const entry of current.filter(x=>x.before===null)){if(await this.app.vault.read(entry.file)!==entry.after)throw Error(this.t('undoConflict'));await this.app.fileManager.trashFile(entry.file);}
+  }catch(error){for(const entry of restored.reverse())await this.app.vault.process(entry.file,raw=>raw===entry.before?entry.after:raw);throw error;}
+  this.undoFrame=null;this.cache.clear();this.refreshViews();
+ },false);}
+ async setTaskDate(path,date,field='date'){if(!['date','deadline'].includes(field)||date&&!C.date(date))throw Error(this.t('badDate'));return this.serial(async()=>{const old=await this.entity(path);if(old.completed)throw Error(this.t('readOnlyHistory'));const changes={[field]:date,updatedAt:this.today()};if(field==='date'){changes.listId=C.bucket({...old,date},this.today());if(old.recurrence!=='none'){changes.mptAnchor=old.mptAnchor||old.date||this.today();changes.mptScheduled=old.mptScheduled||old.date||this.today();}}await this.write(old,changes);});}
+ async duplicateTask(path){return this.serial(async()=>{const old=await this.entity(path);const values={title:old.title+' '+this.t('copySuffix'),project:old.project,date:old.date,deadline:C.date(old.deadline),priority:old.priority,recurrence:'none',completed:false,archived:false,subtasks:old.subtasks.map(x=>({...x,done:false})),sortOrder:Date.now()};values.listId=C.bucket(values,this.today());await this.create('task',values,old.body);});}
  checkDay(){const now=this.today();if(now!==this._day){this._day=now;this.refreshViews();}}
  scheduleRefresh(){clearTimeout(this.refreshTimer);this.refreshTimer=setTimeout(()=>this.refreshViews(),180);}
  refreshViews(){for(const leaf of this.app.workspace.getLeavesOfType(VIEW))leaf.view?.render?.();}
@@ -293,10 +336,11 @@ class MyProjectTasksFree extends Plugin {
  loadTasks(){return this.loadEntities('task');}loadProjects(){return this.loadEntities('project').then(xs=>xs.sort((a,b)=>a.title.localeCompare(b.title)));}
  async backup(record){let hash=14695981039346656037n;for(const char of record.path){hash^=BigInt(char.codePointAt(0));hash=BigInt.asUintN(64,hash*1099511628211n);}const base=`${BACKUP}/${hash.toString(16)}.json`;const existing=this.app.vault.getAbstractFileByPath(base);if(existing){const saved=JSON.parse(await this.app.vault.read(existing));if(saved.originalPath!==record.path)throw Error(this.t('backupConflict'));return;}await this.folder(BACKUP);await this.app.vault.create(base,JSON.stringify({originalPath:record.path,createdAt:new Date().toISOString(),content:record.raw},null,2));}
  async write(record,changes,body){await this.backup(record);const file=this.app.vault.getAbstractFileByPath(record.path);if(!(file instanceof TFile))throw Error(this.t('fileNotFound'));
-  await this.app.vault.process(file,raw=>{if(raw!==record.raw)throw Error(this.t('conflict'));const current=split(raw);return encode({...current.fm,...changes},body===undefined?current.body:body);});this.cache.delete(record.path);return this.entity(record.path);}
+  await this.app.vault.process(file,raw=>{if(raw!==record.raw)throw Error(this.t('conflict'));const current=split(raw);return encode({...current.fm,...changes},body===undefined?current.body:body);});this.cache.delete(record.path);const saved=await this.entity(record.path);this.recordChange(record.path,record.raw,saved.raw);return saved;}
  async create(type,values,body=''){const folder=type==='task'?this.settings.tasksFolder:this.settings.projectsFolder;await this.folder(folder);let path=`${folder}/${C.safeName(values.title||values.name)}.md`,n=2;while(this.app.vault.getAbstractFileByPath(path))path=`${folder}/${C.safeName(values.title||values.name)} (${n++}).md`;
-  const fm={type,id:C.id(),createdAt:this.today(),...values};await this.app.vault.create(path,encode(fm,body));return this.entity(path);}
+  const fm={type,id:C.id(),createdAt:this.today(),...values};const raw=encode(fm,body);await this.app.vault.create(path,raw);this.recordChange(path,null,raw);return this.entity(path);}
  async saveTask(original,values,body){return this.serial(async()=>{let old=original?await this.entity(original.path):null;if(old&&old.raw!==original.raw)throw Error(this.t('conflict'));
+  if(values.deadline&&!C.date(values.deadline))throw Error(this.t('badDate'));
   const changes={...values,updatedAt:this.today()};if(!old){Object.assign(changes,{completed:false,archived:false,sortOrder:Date.now(),listId:C.bucket(changes,this.today())});}
   if(values.recurrence!=='none'&&(!old||old.recurrence!==values.recurrence||(!old.mptAnchor&&!old.date))){changes.mptAnchor=values.date;changes.mptScheduled=values.date;changes.mptSeriesId=C.id();changes.mptNextId='';}
   else if(old?.recurrence!=='none'&&values.recurrence!=='none'){changes.mptAnchor=old.mptAnchor||old.date||values.date;changes.mptScheduled=old.mptScheduled||old.date||values.date;}
@@ -317,12 +361,13 @@ class MyProjectTasksFree extends Plugin {
   const existing=this.app.vault.getAbstractFileByPath(pending.path);if(existing){const record=await this.read(existing,true);if(record.id!==pending.id)throw Error(this.t('recurrenceConflict'));}
   else {await this.folder(pending.path.split('/').slice(0,-1).join('/'));
    const fm={...parent.fm,id:pending.id,completed:false,completedAt:'',date:pending.date,listId:'backlog',archived:false,archivedAt:'',mptScheduled:pending.date,mptNextId:'',mptNextPending:null,mptPreviousId:parent.id,subtasks:parent.subtasks.map(x=>({...x,done:false})),createdAt:this.today(),updatedAt:this.today(),sortOrder:Date.now()};
-   await this.app.vault.create(pending.path,encode(fm,parent.body));
+   if(C.date(parent.deadline)){const base=parent.mptScheduled||parent.date||parent.mptAnchor;fm.deadline=C.addDays(parent.deadline,C.dayDiff(base,pending.date));}
+   const raw=encode(fm,parent.body);await this.app.vault.create(pending.path,raw);this.recordChange(pending.path,null,raw);
   }
   const current=await this.entity(parent.path);await this.write(current,{mptNextPending:null});
  }
  async recover(){if(!this.initialized)return;if(this.recovering)return this.recovering;
-  this.recovering=this.serial(async()=>{const tasks=await this.loadTasks();for(const t of tasks.filter(x=>x.completed&&x.mptNextPending)){try{await this.ensureNext(await this.entity(t.path));}catch(e){if(!this.reported.has('pending:'+t.path)){this.reported.add('pending:'+t.path);new Notice(this.t('pendingError'),8000);}console.error(e);}}});
+  this.recovering=this.serial(async()=>{const tasks=await this.loadTasks();for(const t of tasks.filter(x=>x.completed&&x.mptNextPending)){try{await this.ensureNext(await this.entity(t.path));}catch(e){if(!this.reported.has('pending:'+t.path)){this.reported.add('pending:'+t.path);new Notice(this.t('pendingError'),8000);}console.error(e);}}},false);
   try{await this.recovering;}finally{this.recovering=null;}
  }
  async move(path,target,targetPath=null,after=false){return this.serial(async()=>{let old=await this.entity(path);const current=C.bucket(old,this.today());
@@ -341,7 +386,7 @@ class MyProjectTasksFree extends Plugin {
  async shiftDay(path){return this.serial(async()=>{const old=await this.entity(path);const base=C.asDate(old.date&&old.date>this.today()?old.date:this.today());base.setDate(base.getDate()+1);const date=C.iso(base);
   await this.write(old,{date,listId:'backlog',...(old.recurrence!=='none'?{mptAnchor:old.mptAnchor||old.date||this.today(),mptScheduled:old.mptScheduled||old.date||this.today()}:{}),updatedAt:this.today()});this.refreshViews();});}
  async openSource(task){const path=C.key(task.source),file=this.app.metadataCache.getFirstLinkpathDest(path,task.path);if(!file)return new Notice(this.t('linkMissing'));await this.app.workspace.openLinkText(file.path,task.path,false);}
- confirmDeleteTask(task){new Confirm(this,this.t('deleteTask'),`${task.title}\n${this.t('deleteInfo')}`,()=>this.serial(async()=>{let old=await this.entity(task.path);if(old.mptNextPending){await this.ensureNext(old);old=await this.entity(task.path);}await this.backup(old);await this.app.fileManager.trashFile(this.app.vault.getAbstractFileByPath(task.path));this.cache.delete(task.path);this.refreshViews();})).open();}
- async confirmDeleteProject(project){await this.run(async()=>{const tasks=(await this.loadTasks()).filter(x=>C.key(x.project)===C.key(project.path));new Confirm(this,this.t('deleteProject'),`${project.title}\n${this.t('projectDeleteInfo')}${tasks.length}`,()=>this.serial(async()=>{const current=await this.entity(project.path);await this.backup(current);const related=(await this.loadTasks()).filter(x=>C.key(x.project)===C.key(project.path));for(const task of related)await this.write(await this.entity(task.path),{project:'',updatedAt:this.today()});await this.app.fileManager.trashFile(this.app.vault.getAbstractFileByPath(project.path));this.cache.delete(project.path);this.refreshViews();})).open();});}
+ confirmDeleteTask(task){new Confirm(this,this.t('deleteTask'),`${task.title}\n${this.t('deleteInfo')}`,()=>this.serial(async()=>{let old=await this.entity(task.path);if(old.mptNextPending){await this.ensureNext(old);old=await this.entity(task.path);}await this.backup(old);await this.app.fileManager.trashFile(this.app.vault.getAbstractFileByPath(task.path));this.cache.delete(task.path);this.journal?.clear();this.refreshViews();})).open();}
+ async confirmDeleteProject(project){await this.run(async()=>{const tasks=(await this.loadTasks()).filter(x=>C.key(x.project)===C.key(project.path));new Confirm(this,this.t('deleteProject'),`${project.title}\n${this.t('projectDeleteInfo')}${tasks.length}`,()=>this.serial(async()=>{const current=await this.entity(project.path);await this.backup(current);const related=(await this.loadTasks()).filter(x=>C.key(x.project)===C.key(project.path));for(const task of related)await this.write(await this.entity(task.path),{project:'',updatedAt:this.today()});await this.app.fileManager.trashFile(this.app.vault.getAbstractFileByPath(project.path));this.cache.delete(project.path);this.journal?.clear();this.refreshViews();})).open();});}
 }
 module.exports=MyProjectTasksFree;
