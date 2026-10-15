@@ -17,3 +17,5 @@
 .mpt-root button.mpt-day-number{display:block;box-shadow:none;background:transparent;border:0;padding:3px 7px;height:auto;min-height:28px}
 .mpt-root button.mpt-calendar-task{display:block;width:100%;height:auto;min-height:28px;text-align:left;white-space:normal;overflow-wrap:anywhere;margin:5px 0;padding:5px 6px;border-left:3px solid #64748b;font-size:12px;line-height:1.4}
 .mpt-month-title{font-size:16px;margin:6px 8px}.mpt-calendar .mpt-toolbar{margin-bottom:12px}
+
+.mpt-week .mpt-column-head{border-top-color:#2563eb}.mpt-month .mpt-column-head{border-top-color:#7c3aed}

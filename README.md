@@ -1,10 +1,10 @@
-# My Project Tasks Free 2.3.0
+# My Project Tasks Free 2.4.0
 
 A local task board and monthly calendar for Obsidian. Unlimited tasks and projects, no account, network access or activation required. Data remains in Markdown files in your vault.
 
 ## Features
 
-- Backlog, Today and Done; project colors, three priorities, descriptions and checklists.
+- Backlog, Today and Done, plus optional Week and Month columns enabled independently in settings (both off by default); project colors, three priorities, descriptions and checklists.
 - Monthly calendar with previous/next month and Today controls. Click a day number or empty day space to create a task; click a task to edit it.
 - Switch the calendar between planned dates and deadlines. Dragging changes only the selected field. Completed tasks cannot be dragged in the calendar; restore them first. Date editing is also available through task forms and menus.
 - Optional deadline under “Add a deadline”. Overdue deadlines are highlighted only on unfinished task cards. A planned date after the deadline is allowed and remains visible.
@@ -23,11 +23,15 @@ Duplicates copy the title, project, dates, priority, description and checklist. 
 
 ## Dates and recurrence
 
-Unfinished tasks dated today or earlier appear in Today; future or undated tasks appear in Backlog. Moving to Today assigns today’s planned date; moving to Backlog clears it. Reordering within a column retains the date. Deadline is unaffected by these moves. Completion preserves planned date and records a separate completion date.
+Unfinished tasks dated today or earlier appear in Today. When enabled, Week contains future planned dates through Sunday, including dates across a month boundary. Month contains remaining future planned dates through the end of the current month. All other tasks appear in Backlog. Hiding a column does not edit task files. Moving to Today assigns today’s planned date; moving to Backlog clears it. Moving to Week assigns Sunday; moving to Month assigns the last day of this month. The column’s + button proposes the same date. On Sunday or month-end these dates may belong to Today; Week takes precedence over Month when periods overlap. Reordering within a column retains the date. Deadline is unaffected by these moves. Completion preserves planned date and records a separate completion date.
 
 The next recurring instance is created only after completion. Its date is later than both the scheduled occurrence and completion day; missed periods are skipped. Monthly series preserve their original day across shorter months. Manually postponing an instance does not reset its series calendar. A successor’s deadline shifts by the number of calendar days between the old scheduled occurrence and the new one. The completed instance retains its original deadline.
 
 Restoring history with an existing successor makes the restored task one-off. Deleting the active occurrence stops that series. If successor creation fails, opening the board retries recovery without duplicating an already created successor.
+
+## Startup fix
+
+Folder checks use physical storage when the Obsidian index is not ready, avoiding duplicate creation of existing folders. File collisions and genuine storage errors are still reported. Retry re-runs initialization after the storage problem is resolved.
 
 ## Install / update
 
@@ -41,7 +45,7 @@ Before the first edit of a file, its original text is backed up as JSON (`origin
 
 Automatic per-file backups are not a full vault snapshot. Roll back to 2.1.5 only with a complete pre-upgrade vault snapshot and matching plugin build; its old recurrence logic is incompatible with Free’s history.
 
-55 automated tests cover core logic and simulated Vault/DOM interactions. Native Obsidian execution, actual themes and multi-device conflicts are not certified by these tests. Translations have not been independently reviewed by native speakers. Minimum Obsidian version: 1.6.6.
+64 automated tests cover core logic and simulated Vault/DOM interactions. Native Obsidian execution, actual themes and multi-device conflicts are not certified by these tests. Translations have not been independently reviewed by native speakers. Minimum Obsidian version: 1.6.6.
 
 ## Development
 

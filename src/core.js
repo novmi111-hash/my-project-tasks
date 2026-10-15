@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.3.0';
+const VERSION = '2.4.0';
 const RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
 const pad = n => String(n).padStart(2, '0');
 function iso(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
@@ -29,7 +29,9 @@ function normalize(fm, path, body='') {
     sortOrder:Number(fm.sortOrder)||0,
     subtasks:Array.isArray(fm.subtasks)?fm.subtasks.map(x=>typeof x==='string'?{text:x,done:false}:{...x,text:String(x?.text||''),done:yes(x?.done)}):[]};
 }
-function bucket(task, today=iso()) { return task.completed ? 'done' : task.date && task.date<=today ? 'today' : 'backlog'; }
+function periodDate(period,today=iso()){if(period==='today')return today;const d=asDate(today);if(period==='week')return addDays(today,(7-d.getDay())%7);if(period==='month')return iso(new Date(d.getFullYear(),d.getMonth()+1,0,12));return '';}
+function bucket(task,today=iso(),settings={}){if(task.completed)return 'done';if(task.date&&task.date<=today)return 'today';if(task.date&&settings.showWeek&&task.date<=periodDate('week',today))return 'week';if(task.date&&settings.showMonth&&task.date<=periodDate('month',today))return 'month';return 'backlog';}
+
 function nextOccurrence(task, today=iso()) {
   const rec=task.recurrence;
   if (!RECURRENCES.includes(rec) || rec==='none') return '';
@@ -51,13 +53,13 @@ function nextOccurrence(task, today=iso()) {
   base.setDate(base.getDate()+steps*interval);
   return iso(base);
 }
-function movement(task, target, today=iso(), restore=false) {
+function movement(task, target, today=iso(), restore=false,settings={}) {
   if(restore) return {completed:false,completedAt:'',archived:false,archivedAt:'',...(task.mptNextId?{recurrence:'none'}:{})};
-  if(bucket(task,today)===target) return {};
+  if(bucket(task,today,settings)===target) return {};
   if(target==='done') return {completed:true,completedAt:today};
-  return {completed:false,completedAt:'',date:target==='today'?today:'',archived:false,archivedAt:'',
+  return {completed:false,completedAt:'',date:periodDate(target,today),archived:false,archivedAt:'',
     ...(task.completed&&task.mptNextId?{recurrence:'none'}:{})};
 }
 function safeName(s) {return String(s||'Task').replace(/[\\/:*?"<>|#^[\]]/g,'-').replace(/\s+/g,' ').replace(/[. ]+$/,'').slice(0,100)||'Task';}
 function id() {return globalThis.crypto?.randomUUID?.() || `mpt-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;}
-module.exports={VERSION,addDays,dayDiff,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};
+module.exports={VERSION,periodDate,addDays,dayDiff,RECURRENCES,iso,date,asDate,key,yes,normalize,bucket,nextOccurrence,movement,safeName,id};

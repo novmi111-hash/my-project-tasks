@@ -5,7 +5,7 @@ const STRINGS=require('./i18n');
 const L=require('./locales');
 const VIEW='my-project-tasks-view';
 const BACKUP='MyProjectTasksBackups/Free-2.2.0';
-const DEFAULTS={tasksFolder:'Tasks',projectsFolder:'Projects',defaultPriority:'medium',freeLanguage:'auto'};
+const DEFAULTS={tasksFolder:'Tasks',projectsFolder:'Projects',defaultPriority:'medium',freeLanguage:'auto',showWeek:false,showMonth:false};
 function split(raw) {
  const m=/^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(raw);
  if(!m) return {fm:{},body:raw};
@@ -85,7 +85,7 @@ class Board extends ItemView {
   this.content=el(root,'div','mpt-content');if(this.mode==='projects')this.renderProjects();else{this.renderFilters();if(this.mode==='calendar'){this.calendar=el(this.content,'div','mpt-calendar');this.renderCalendar();}else{this.renderQuickAdd();this.board=el(this.content,'div','mpt-board');this.renderBoard();}}
   root.querySelectorAll('.mpt-column-body').forEach((x,i)=>x.scrollTop=scrolls[i]||0);
   if(focus){const s=root.querySelector('.mpt-search');s?.focus();try{s?.setSelectionRange(pos,pos);}catch{}}
- }catch(e){this.plugin.error(e);const root=this.containerEl.children[1];root.empty();el(root,'p','mpt-error',this.plugin.t('error'));button(root,this.plugin.t('retry'),()=>this.render());}}
+ }catch(e){this.plugin.error(e);const root=this.containerEl.children[1];root.empty();el(root,'p','mpt-error',this.plugin.t('error'));button(root,this.plugin.t('retry'),()=>this.plugin.run(async()=>{if(!this.plugin.initialized){this.plugin.ready=this.plugin.initialize();await this.plugin.ready;}await this.render();}));}}
  renderFilters(){const t=k=>this.plugin.t(k),bar=el(this.content,'div','mpt-toolbar');
   const search=el(bar,'input','mpt-search');search.type='search';search.placeholder=t('search');search.setAttribute('aria-label',t('search'));search.value=this.filter.search;search.oninput=()=>{this.filter.search=search.value;this.doneLimit=50;clearTimeout(this.searchTimer);this.searchTimer=setTimeout(()=>this.renderResults(),100);};
   const pr=el(bar,'select');pr.setAttribute('aria-label',t('project'));options(pr,[['',t('allProjects')],['__none',t('noProject')],...this.projects.map(p=>[C.key(p.path),p.title])],this.filter.project);pr.onchange=()=>{this.filter.project=pr.value;this.doneLimit=50;this.renderResults();};
@@ -100,10 +100,11 @@ class Board extends ItemView {
   return a.sortOrder-b.sortOrder||a.title.localeCompare(b.title);
  });}
  renderBoard(){if(!this.board)return;this.board.empty();const t=k=>this.plugin.t(k),today=this.plugin.today(),tasks=this.filtered();
-  for(const list of ['backlog','today','done']){
-   const items=this.ordered(tasks.filter(x=>C.bucket(x,today)===list),list),col=el(this.board,'section',`mpt-column mpt-${list}`);
+  const lists=['backlog',...(this.plugin.settings.showMonth?['month']:[]),...(this.plugin.settings.showWeek?['week']:[]),'today','done'];this.board.style.gridTemplateColumns=`repeat(${lists.length},minmax(220px,1fr))`;
+  for(const list of lists){
+   const items=this.ordered(tasks.filter(x=>C.bucket(x,today,this.plugin.settings)===list),list),col=el(this.board,'section',`mpt-column mpt-${list}`);
    const head=el(col,'div','mpt-column-head');el(head,'h3','',t(list));el(head,'span','mpt-count',items.length);
-   if(list!=='done')button(head,'+',()=>new TaskModal(this.plugin,null,{date:list==='today'?today:''}).open()).setAttribute('aria-label',t('newTask'));
+   if(list!=='done')button(head,'+',()=>new TaskModal(this.plugin,null,{date:C.periodDate(list,today)}).open()).setAttribute('aria-label',t('newTask'));
    const body=el(col,'div','mpt-column-body');body.dataset.list=list;this.drop(body,list);
    if(!items.length)el(body,'p','mpt-empty',t('empty'));
    if(list==='today'){
@@ -117,7 +118,7 @@ class Board extends ItemView {
  }
  drop(node,list,target=null){node.ondragover=e=>{if(e.dataTransfer?.types?.includes('text/mpt-task')){e.preventDefault();e.stopPropagation();node.classList.add('mpt-dragover');}};node.ondragleave=()=>node.classList.remove('mpt-dragover');
   node.ondrop=e=>{e.preventDefault();e.stopPropagation();node.classList.remove('mpt-dragover');const path=e.dataTransfer.getData('text/mpt-task');if(!path||path===target?.path)return;
-   this.plugin.run(async()=>{if(this.filter.sort!=='manual'&&target&&C.bucket(target,this.plugin.today())===C.bucket(this.tasks.find(x=>x.path===path)||{},this.plugin.today()))return new Notice(this.plugin.t('dragSorted'));
+   this.plugin.run(async()=>{if(this.filter.sort!=='manual'&&target&&C.bucket(target,this.plugin.today(),this.plugin.settings)===C.bucket(this.tasks.find(x=>x.path===path)||{},this.plugin.today(),this.plugin.settings))return new Notice(this.plugin.t('dragSorted'));
     await this.plugin.move(path,list,target?.path,e.clientY>node.getBoundingClientRect().top+node.getBoundingClientRect().height/2);await this.render();});};}
  card(host,task,list){const p=this.plugin,t=k=>p.t(k),card=el(host,'article',`mpt-card${task.completed?' is-completed':''}${!task.completed&&task.date&&task.date<p.today()?' is-overdue':''}`);
   const project=this.projects.find(x=>C.key(x.path)===C.key(task.project));card.style.borderLeftColor=project?.color||'#64748b';card.draggable=true;card.ondragstart=e=>{if(e.target.closest('button,input,select,a')){e.preventDefault();return;}e.dataTransfer.setData('text/mpt-task',task.path);e.dataTransfer.effectAllowed='move';};this.drop(card,list,task);
@@ -136,7 +137,7 @@ class Board extends ItemView {
   card.oncontextmenu=e=>{e.preventDefault();this.taskMenu(e,task);};
  }
  taskMenu(event,task){const p=this.plugin,t=k=>p.t(k),m=new Menu();const add=(name,fn)=>m.addItem(x=>x.setTitle(t(name)).onClick(()=>p.run(fn)));
-  add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));add('tomorrow',()=>p.setTaskDate(task.path,C.addDays(p.today(),1)));add('inWeek',()=>p.setTaskDate(task.path,C.addDays(p.today(),7)));add('chooseDate',()=>new DateModal(p,task).open());}
+  add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));if(p.settings.showWeek)add('toWeek',()=>p.move(task.path,'week'));if(p.settings.showMonth)add('toMonth',()=>p.move(task.path,'month'));add('tomorrow',()=>p.setTaskDate(task.path,C.addDays(p.today(),1)));add('inWeek',()=>p.setTaskDate(task.path,C.addDays(p.today(),7)));add('chooseDate',()=>new DateModal(p,task).open());}
   add('duplicate',()=>p.duplicateTask(task.path));add('openNote',()=>p.app.workspace.openLinkText(task.path,'',false));if(task.source)add('openSource',()=>p.openSource(task));add('delete',()=>p.confirmDeleteTask(task));m.showAtMouseEvent(event);
  }
  renderResults(){if(this.mode==='calendar')this.renderCalendar();else this.renderBoard();}
@@ -169,6 +170,7 @@ class Settings extends PluginSettingTab {
  constructor(app,plugin){super(app,plugin);this.plugin=plugin;}
  display(){const p=this.plugin,t=k=>p.t(k),c=this.containerEl;c.empty();el(c,'h2','',`My Project Tasks Free ${C.VERSION}`);
   new Setting(c).setName(t('language')).addDropdown(d=>{d.addOption('auto',t('auto'));for(const [code,name] of Object.entries(L.languages))d.addOption(code,name);d.setValue(p.settings.freeLanguage).onChange(v=>p.run(async()=>{p.settings.freeLanguage=v;await p.saveData(p.settings);p.updateCommandLabels();this.display();p.refreshViews();}));});
+  for(const key of ['showWeek','showMonth'])new Setting(c).setName(t(key)).setDesc(t('periodColumnsHint')).addToggle(toggle=>toggle.setValue(!!p.settings[key]).onChange(value=>p.run(async()=>{p.settings[key]=value;await p.saveData(p.settings);p.refreshViews();})));
   let tasks=p.settings.tasksFolder,projects=p.settings.projectsFolder;
   new Setting(c).setName(t('taskFolder')).addText(x=>x.setValue(tasks).onChange(v=>tasks=v));new Setting(c).setName(t('projectFolder')).addText(x=>x.setValue(projects).onChange(v=>projects=v));
   new Setting(c).setDesc(t('foldersDesc')).addButton(x=>x.setButtonText(t('apply')).onClick(()=>p.run(async()=>{const a=p.validFolder(tasks),b=p.validFolder(projects);if(!a||!b||a===b||a.startsWith(b+'/')||b.startsWith(a+'/'))throw Error(t('invalidFolder'));await p.folder(a);await p.folder(b);p.settings.tasksFolder=a;p.settings.projectsFolder=b;await p.saveData(p.settings);p.cache.clear();p.refreshViews();})));
@@ -210,14 +212,20 @@ class MyProjectTasksFree extends Plugin {
   }catch(error){for(const entry of restored.reverse())await this.app.vault.process(entry.file,raw=>raw===entry.before?entry.after:raw);throw error;}
   this.undoFrame=null;this.cache.clear();this.refreshViews();
  },false);}
- async setTaskDate(path,date,field='date'){if(!['date','deadline'].includes(field)||date&&!C.date(date))throw Error(this.t('badDate'));return this.serial(async()=>{const old=await this.entity(path);if(old.completed)throw Error(this.t('readOnlyHistory'));const changes={[field]:date,updatedAt:this.today()};if(field==='date'){changes.listId=C.bucket({...old,date},this.today());if(old.recurrence!=='none'){changes.mptAnchor=old.mptAnchor||old.date||this.today();changes.mptScheduled=old.mptScheduled||old.date||this.today();}}await this.write(old,changes);});}
- async duplicateTask(path){return this.serial(async()=>{const old=await this.entity(path);const values={title:old.title+' '+this.t('copySuffix'),project:old.project,date:old.date,deadline:C.date(old.deadline),priority:old.priority,recurrence:'none',completed:false,archived:false,subtasks:old.subtasks.map(x=>({...x,done:false})),sortOrder:Date.now()};values.listId=C.bucket(values,this.today());await this.create('task',values,old.body);});}
+ async setTaskDate(path,date,field='date'){if(!['date','deadline'].includes(field)||date&&!C.date(date))throw Error(this.t('badDate'));return this.serial(async()=>{const old=await this.entity(path);if(old.completed)throw Error(this.t('readOnlyHistory'));const changes={[field]:date,updatedAt:this.today()};if(field==='date'){changes.listId=C.bucket({...old,date},this.today(),this.settings);if(old.recurrence!=='none'){changes.mptAnchor=old.mptAnchor||old.date||this.today();changes.mptScheduled=old.mptScheduled||old.date||this.today();}}await this.write(old,changes);});}
+ async duplicateTask(path){return this.serial(async()=>{const old=await this.entity(path);const values={title:old.title+' '+this.t('copySuffix'),project:old.project,date:old.date,deadline:C.date(old.deadline),priority:old.priority,recurrence:'none',completed:false,archived:false,subtasks:old.subtasks.map(x=>({...x,done:false})),sortOrder:Date.now()};values.listId=C.bucket(values,this.today(),this.settings);await this.create('task',values,old.body);});}
  checkDay(){const now=this.today();if(now!==this._day){this._day=now;this.refreshViews();}}
  scheduleRefresh(){clearTimeout(this.refreshTimer);this.refreshTimer=setTimeout(()=>this.refreshViews(),180);}
  refreshViews(){for(const leaf of this.app.workspace.getLeavesOfType(VIEW))leaf.view?.render?.();}
  async open(){await this.ready;let leaf=this.app.workspace.getLeavesOfType(VIEW)[0];if(!leaf){leaf=this.app.workspace.getLeaf(false);await leaf.setViewState({type:VIEW,active:true});}await this.app.workspace.revealLeaf(leaf);return leaf.view;}
  validFolder(path){const s=String(path||'').trim().replace(/\\/g,'/').replace(/\/+$/,'');if(!s||s.startsWith('/')||s.split('/').some(x=>!x||x==='..'||x==='.'||x.startsWith('.'))||/[:*?"<>|]/.test(s)||s.startsWith('MyProjectTasksBackups'))return '';return normalizePath(s);}
- async folder(path){let current='';for(const part of path.split('/')){current=current?`${current}/${part}`:part;const existing=this.app.vault.getAbstractFileByPath(current);if(existing instanceof TFile)throw Error(this.t('folderExists'));if(!existing)try{await this.app.vault.createFolder(current);}catch(e){if(!this.app.vault.getAbstractFileByPath(current))throw e;}}}
+ async folder(path){let current='';const vault=this.app.vault;
+  const kind=async name=>{const item=vault.getAbstractFileByPath(name);if(item)return item instanceof TFile?'file':'folder';return (await vault.adapter?.stat(name))?.type||null;};
+  for(const part of path.split('/')){current=current?`${current}/${part}`:part;const existing=await kind(current);if(existing==='file')throw Error(this.t('folderExists'));if(existing==='folder')continue;
+   try{await vault.createFolder(current);}catch(error){const actual=await kind(current);if(actual==='file')throw Error(this.t('folderExists'));if(actual!=='folder')throw error;}
+  }
+ }
+
  async read(file,fresh=false){if(!file||!(file instanceof TFile))throw Error(this.t('fileNotFound'));if(!fresh&&this.cache.has(file.path))return this.cache.get(file.path);
   const raw=await this.app.vault.read(file),{fm,body}=split(raw),record={...C.normalize(fm,file.path,body),fm,raw};this.cache.set(file.path,record);return record;}
  async entity(path){const f=this.app.vault.getAbstractFileByPath(path);return this.read(f,true);}
@@ -233,10 +241,10 @@ class MyProjectTasksFree extends Plugin {
   const fm={type,id:C.id(),createdAt:this.today(),...values};const raw=encode(fm,body);await this.app.vault.create(path,raw);this.recordChange(path,null,raw);return this.entity(path);}
  async saveTask(original,values,body){return this.serial(async()=>{let old=original?await this.entity(original.path):null;if(old&&old.raw!==original.raw)throw Error(this.t('conflict'));
   if(values.deadline&&!C.date(values.deadline))throw Error(this.t('badDate'));
-  const changes={...values,updatedAt:this.today()};if(!old){Object.assign(changes,{completed:false,archived:false,sortOrder:Date.now(),listId:C.bucket(changes,this.today())});}
+  const changes={...values,updatedAt:this.today()};if(!old){Object.assign(changes,{completed:false,archived:false,sortOrder:Date.now(),listId:C.bucket(changes,this.today(),this.settings)});}
   if(values.recurrence!=='none'&&(!old||old.recurrence!==values.recurrence||(!old.mptAnchor&&!old.date))){changes.mptAnchor=values.date;changes.mptScheduled=values.date;changes.mptSeriesId=C.id();changes.mptNextId='';}
   else if(old?.recurrence!=='none'&&values.recurrence!=='none'){changes.mptAnchor=old.mptAnchor||old.date||values.date;changes.mptScheduled=old.mptScheduled||old.date||values.date;}
-  if(old){changes.id=old.id||C.id();if(!old.completed)changes.listId=C.bucket({...old,...changes},this.today());await this.write(old,changes,body);}else await this.create('task',changes,body);
+  if(old){changes.id=old.id||C.id();if(!old.completed)changes.listId=C.bucket({...old,...changes},this.today(),this.settings);await this.write(old,changes,body);}else await this.create('task',changes,body);
   this.refreshViews();});}
  async saveProject(original,values,body){return this.serial(async()=>{if(original){const old=await this.entity(original.path);if(old.raw!==original.raw)throw Error(this.t('conflict'));await this.write(old,{...values,id:old.id||C.id()},body);}else await this.create('project',values,body);this.refreshViews();});}
  async toggleSubtask(path,index,done){return this.serial(async()=>{const old=await this.entity(path);const subtasks=old.subtasks.map(x=>({...x}));if(!subtasks[index])return;subtasks[index].done=done;await this.write(old,{subtasks,updatedAt:this.today()});this.refreshViews();});}
@@ -262,19 +270,19 @@ class MyProjectTasksFree extends Plugin {
   this.recovering=this.serial(async()=>{const tasks=await this.loadTasks();for(const t of tasks.filter(x=>x.completed&&x.mptNextPending)){try{await this.ensureNext(await this.entity(t.path));}catch(e){if(!this.reported.has('pending:'+t.path)){this.reported.add('pending:'+t.path);new Notice(this.t('pendingError'),8000);}console.error(e);}}},false);
   try{await this.recovering;}finally{this.recovering=null;}
  }
- async move(path,target,targetPath=null,after=false){return this.serial(async()=>{let old=await this.entity(path);const current=C.bucket(old,this.today());
+ async move(path,target,targetPath=null,after=false){return this.serial(async()=>{let old=await this.entity(path);const current=C.bucket(old,this.today(),this.settings);
   if(target==='done'&&!old.completed){await this.complete(old);this.refreshViews();return;}
-  const changes=C.movement(old,target,this.today());if(old.completed&&old.mptNextPending)await this.ensureNext(old);
+  const changes=C.movement(old,target,this.today(),false,this.settings);if(old.completed&&old.mptNextPending)await this.ensureNext(old);
   old=await this.entity(path);
   if(old.completed&&target!=='done'&&old.mptNextId)new Notice(this.t('restoredOnce'));
-  const tasks=await this.loadTasks(),items=tasks.filter(x=>x.path!==path&&C.bucket(x,this.today())===target).sort((a,b)=>a.sortOrder-b.sortOrder);
+  const tasks=await this.loadTasks(),items=tasks.filter(x=>x.path!==path&&C.bucket(x,this.today(),this.settings)===target).sort((a,b)=>a.sortOrder-b.sortOrder);
   let order=(items.at(-1)?.sortOrder||0)+1000;
   if(targetPath){const i=items.findIndex(x=>x.path===targetPath);if(i>=0){const at=i+(after?1:0),left=items[at-1]?.sortOrder,right=items[at]?.sortOrder;order=left===undefined?(right||0)-1000:right===undefined?left+1000:(left+right)/2;
    if(left!==undefined&&right!==undefined&&(order===left||order===right||left===right)){for(let n=0;n<items.length;n++){const r=await this.entity(items[n].path);await this.write(r,{sortOrder:(n+1)*1000});}order=at*1000+500;}}}
   const preserveSchedule=old.recurrence!=='none'?{mptAnchor:old.mptAnchor||old.date||this.today(),mptScheduled:old.mptScheduled||old.date||this.today()}:{};
   await this.write(old,{...preserveSchedule,...changes,...(current!==target?{listId:target}:{}),sortOrder:order,updatedAt:this.today()});this.refreshViews();});}
  async restore(path){return this.serial(async()=>{let old=await this.entity(path);if(old.mptNextPending){await this.ensureNext(old);old=await this.entity(path);}if(!old.completed&&!old.archived)return;
-  const changes=C.movement(old,'',this.today(),true);await this.write(old,{...changes,listId:C.bucket({...old,...changes},this.today()),updatedAt:this.today()});if(old.mptNextId)new Notice(this.t('restoredOnce'));this.refreshViews();});}
+  const changes=C.movement(old,'',this.today(),true,this.settings);await this.write(old,{...changes,listId:C.bucket({...old,...changes},this.today(),this.settings),updatedAt:this.today()});if(old.mptNextId)new Notice(this.t('restoredOnce'));this.refreshViews();});}
  async shiftDay(path){return this.serial(async()=>{const old=await this.entity(path);const base=C.asDate(old.date&&old.date>this.today()?old.date:this.today());base.setDate(base.getDate()+1);const date=C.iso(base);
   await this.write(old,{date,listId:'backlog',...(old.recurrence!=='none'?{mptAnchor:old.mptAnchor||old.date||this.today(),mptScheduled:old.mptScheduled||old.date||this.today()}:{}),updatedAt:this.today()});this.refreshViews();});}
  async openSource(task){const path=C.key(task.source),file=this.app.metadataCache.getFirstLinkpathDest(path,task.path);if(!file)return new Notice(this.t('linkMissing'));await this.app.workspace.openLinkText(file.path,task.path,false);}
