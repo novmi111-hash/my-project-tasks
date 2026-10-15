@@ -1,5 +1,5 @@
 'use strict';
-const VERSION = '2.4.0';
+const VERSION = '2.5.0';
 const RECURRENCES = ['none', 'daily', 'weekly', 'monthly'];
 const pad = n => String(n).padStart(2, '0');
 function iso(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }

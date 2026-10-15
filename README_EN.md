@@ -1,4 +1,4 @@
-# My Project Tasks Free 2.4.0
+# My Project Tasks Free 2.5.0
 
 A local task board and monthly calendar for Obsidian. Unlimited tasks and projects, no account, network access or activation required. Data remains in Markdown files in your vault.
 
@@ -45,8 +45,12 @@ Before the first edit of a file, its original text is backed up as JSON (`origin
 
 Automatic per-file backups are not a full vault snapshot. Roll back to 2.1.5 only with a complete pre-upgrade vault snapshot and matching plugin build; its old recurrence logic is incompatible with Free’s history.
 
-64 automated tests cover core logic and simulated Vault/DOM interactions. Native Obsidian execution, actual themes and multi-device conflicts are not certified by these tests. Translations have not been independently reviewed by native speakers. Minimum Obsidian version: 1.6.6.
+68 automated tests cover core logic and simulated Vault/DOM interactions. Native Obsidian execution, actual themes and multi-device conflicts are not certified by these tests. Translations have not been independently reviewed by native speakers. Minimum Obsidian version: 1.6.6.
 
 ## Development
 
 Build: `node build.cjs`. Test: `node --test tests/*.test.cjs`. Sources are in `src/`. GitHub Actions verifies builds and publishes new manifest versions with the three installable assets. See LICENSE for usage and redistribution terms.
+
+## Manual archive
+
+Choose Archive task in the task menu. The Archive tab supports search, filters and Unarchive. Archived tasks are hidden from the board and calendar; files stay in place. Unarchive preserves completion status, planned date, deadline and recurrence. Reopen a completed task separately if needed. Archiving does not complete a task or create its next occurrence; existing successors remain active. Both actions support undo. Legacy archived: true tasks appear here too. No automatic archiving or retention settings are included.

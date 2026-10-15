@@ -79,10 +79,10 @@ class Board extends ItemView {
   this.tasks=tasks;this.projects=projects;const root=this.containerEl.children[1];
   const active=root.ownerDocument.activeElement,focus=active?.classList.contains('mpt-search'),pos=focus?active.selectionStart:null;
   const scrolls=Array.from(root.querySelectorAll('.mpt-column-body')).map(x=>x.scrollTop);root.empty();root.addClass('mpt-root');const t=k=>this.plugin.t(k);
-  const top=el(root,'div','mpt-topbar');for(const mode of ['tasks','calendar','projects'])button(top,t(mode),()=>{this.mode=mode;this.render();},`mpt-btn ${this.mode===mode?'mod-cta':''}`);
+  const top=el(root,'div','mpt-topbar');for(const mode of ['tasks','calendar','archive','projects'])button(top,t(mode),()=>{this.mode=mode;this.render();},`mpt-btn ${this.mode===mode?'mod-cta':''}`);
   el(top,'span','mpt-version',`Free ${C.VERSION}`);button(top,t('newTask'),()=>new TaskModal(this.plugin).open(),'mpt-btn mod-cta');
   const undo=button(top,t('undo'),()=>this.plugin.run(()=>this.plugin.undo()));undo.disabled=!this.plugin.undoFrame;
-  this.content=el(root,'div','mpt-content');if(this.mode==='projects')this.renderProjects();else{this.renderFilters();if(this.mode==='calendar'){this.calendar=el(this.content,'div','mpt-calendar');this.renderCalendar();}else{this.renderQuickAdd();this.board=el(this.content,'div','mpt-board');this.renderBoard();}}
+  this.content=el(root,'div','mpt-content');if(this.mode==='projects')this.renderProjects();else{this.renderFilters();if(this.mode==='calendar'){this.calendar=el(this.content,'div','mpt-calendar');this.renderCalendar();}else if(this.mode==='archive')this.renderArchive();else{this.renderQuickAdd();this.board=el(this.content,'div','mpt-board');this.renderBoard();}}
   root.querySelectorAll('.mpt-column-body').forEach((x,i)=>x.scrollTop=scrolls[i]||0);
   if(focus){const s=root.querySelector('.mpt-search');s?.focus();try{s?.setSelectionRange(pos,pos);}catch{}}
  }catch(e){this.plugin.error(e);const root=this.containerEl.children[1];root.empty();el(root,'p','mpt-error',this.plugin.t('error'));button(root,this.plugin.t('retry'),()=>this.plugin.run(async()=>{if(!this.plugin.initialized){this.plugin.ready=this.plugin.initialize();await this.plugin.ready;}await this.render();}));}}
@@ -92,7 +92,7 @@ class Board extends ItemView {
   const priority=el(bar,'select');priority.setAttribute('aria-label',t('priority'));options(priority,[['',t('allPriorities')],...['high','medium','low'].map(x=>[x,t(x)])],this.filter.priority);priority.onchange=()=>{this.filter.priority=priority.value;this.renderResults();};
   const sort=el(bar,'select');sort.setAttribute('aria-label',t('manual'));options(sort,[['manual',t('manual')],['date',t('byDate')],['priority',t('byPriority')]],this.filter.sort);sort.onchange=()=>{this.filter.sort=sort.value;this.renderResults();};
  }
- filtered(){const q=this.filter.search.trim().toLocaleLowerCase();return this.tasks.filter(x=>(!this.filter.priority||x.priority===this.filter.priority)&&(!q||`${x.title} ${x.body} ${x.subtasks.map(s=>s.text).join(' ')}`.toLocaleLowerCase().includes(q))&&(!this.filter.project||(this.filter.project==='__none'?!x.project:C.key(x.project)===this.filter.project)));}
+ filtered(){const q=this.filter.search.trim().toLocaleLowerCase();return this.tasks.filter(x=>(this.mode==='archive'?x.archived:!x.archived)&&(!this.filter.priority||x.priority===this.filter.priority)&&(!q||`${x.title} ${x.body} ${x.subtasks.map(s=>s.text).join(' ')}`.toLocaleLowerCase().includes(q))&&(!this.filter.project||(this.filter.project==='__none'?!x.project:C.key(x.project)===this.filter.project)));}
  ordered(items,list){return [...items].sort((a,b)=>{
   if(list==='done')return String(b.completedAt||b.archivedAt||'').localeCompare(String(a.completedAt||a.archivedAt||''))||(b.sortOrder-a.sortOrder);
   if(this.filter.sort==='date')return (a.date||'9999').localeCompare(b.date||'9999')||a.sortOrder-b.sortOrder;
@@ -121,14 +121,15 @@ class Board extends ItemView {
    this.plugin.run(async()=>{if(this.filter.sort!=='manual'&&target&&C.bucket(target,this.plugin.today(),this.plugin.settings)===C.bucket(this.tasks.find(x=>x.path===path)||{},this.plugin.today(),this.plugin.settings))return new Notice(this.plugin.t('dragSorted'));
     await this.plugin.move(path,list,target?.path,e.clientY>node.getBoundingClientRect().top+node.getBoundingClientRect().height/2);await this.render();});};}
  card(host,task,list){const p=this.plugin,t=k=>p.t(k),card=el(host,'article',`mpt-card${task.completed?' is-completed':''}${!task.completed&&task.date&&task.date<p.today()?' is-overdue':''}`);
-  const project=this.projects.find(x=>C.key(x.path)===C.key(task.project));card.style.borderLeftColor=project?.color||'#64748b';card.draggable=true;card.ondragstart=e=>{if(e.target.closest('button,input,select,a')){e.preventDefault();return;}e.dataTransfer.setData('text/mpt-task',task.path);e.dataTransfer.effectAllowed='move';};this.drop(card,list,task);
-  button(card,task.title,()=>new TaskModal(p,task).open(),'mpt-card-title');
+  const project=this.projects.find(x=>C.key(x.path)===C.key(task.project));card.style.borderLeftColor=project?.color||'#64748b';card.draggable=!task.archived;card.ondragstart=e=>{if(e.target.closest('button,input,select,a')){e.preventDefault();return;}e.dataTransfer.setData('text/mpt-task',task.path);e.dataTransfer.effectAllowed='move';};if(!task.archived)this.drop(card,list,task);
+  button(card,task.title,()=>task.archived?p.app.workspace.openLinkText(task.path,'',false):new TaskModal(p,task).open(),'mpt-card-title');
   const meta=el(card,'div','mpt-meta');if(project)el(meta,'span','',project.title);else if(task.project)el(meta,'span','',C.key(task.project));
   el(meta,'span',`mpt-priority mpt-priority-${task.priority}`,t(task.priority));if(task.date)el(meta,'span','',p.formatDate(task.date));
   if(C.date(task.deadline))el(meta,'span',!task.completed&&task.deadline<p.today()?'mpt-deadline-late':'',`${t('deadline')}: ${p.formatDate(task.deadline)}`);
   if(task.completedAt&&task.completed)el(meta,'span','',`${t('completedAt')}: ${p.formatDate(task.completedAt)}`);
   if(task.recurrence!=='none')el(meta,'span','',`↻ ${C.RECURRENCES.includes(task.recurrence)?t(task.recurrence):task.recurrence}`);
   if(task.archived)el(meta,'span','',t('archived'));if(task.mptNextPending)el(card,'p','mpt-error',t('pendingRepair'));
+  if(task.archived){const a=el(card,'div','mpt-card-actions');button(a,t('unarchive'),()=>p.run(()=>p.setArchived(task.path,false)));button(a,'⋯',e=>this.taskMenu(e,task)).setAttribute('aria-label',t('menu'));card.oncontextmenu=e=>{e.preventDefault();this.taskMenu(e,task);};return;}
   if(task.subtasks.length){el(card,'div','mpt-meta',`${task.subtasks.filter(x=>x.done).length} / ${task.subtasks.length}`);for(const [i,s] of task.subtasks.slice(0,3).entries()){const row=el(card,'label','mpt-check');const cb=el(row,'input');cb.type='checkbox';cb.checked=s.done;cb.onchange=()=>p.run(()=>p.toggleSubtask(task.path,i,cb.checked));el(row,'span','',s.text);}}
   const a=el(card,'div','mpt-card-actions');if(!task.completed)button(a,'✓',()=>p.run(()=>p.move(task.path,'done'))).setAttribute('aria-label',t('complete'));
   if(task.completed)button(a,t('restore'),()=>p.run(()=>p.restore(task.path)));
@@ -137,10 +138,12 @@ class Board extends ItemView {
   card.oncontextmenu=e=>{e.preventDefault();this.taskMenu(e,task);};
  }
  taskMenu(event,task){const p=this.plugin,t=k=>p.t(k),m=new Menu();const add=(name,fn)=>m.addItem(x=>x.setTitle(t(name)).onClick(()=>p.run(fn)));
-  add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));if(p.settings.showWeek)add('toWeek',()=>p.move(task.path,'week'));if(p.settings.showMonth)add('toMonth',()=>p.move(task.path,'month'));add('tomorrow',()=>p.setTaskDate(task.path,C.addDays(p.today(),1)));add('inWeek',()=>p.setTaskDate(task.path,C.addDays(p.today(),7)));add('chooseDate',()=>new DateModal(p,task).open());}
+  if(task.archived){add('unarchive',()=>p.setArchived(task.path,false));add('openNote',()=>p.app.workspace.openLinkText(task.path,'',false));add('delete',()=>p.confirmDeleteTask(task));m.showAtMouseEvent(event);return;}
+  add('archiveTask',()=>p.setArchived(task.path,true));add('edit',()=>new TaskModal(p,task).open());if(task.completed)add('restore',()=>p.restore(task.path));else{add('complete',()=>p.move(task.path,'done'));add('toToday',()=>p.move(task.path,'today'));add('toBacklog',()=>p.move(task.path,'backlog'));if(p.settings.showWeek)add('toWeek',()=>p.move(task.path,'week'));if(p.settings.showMonth)add('toMonth',()=>p.move(task.path,'month'));add('tomorrow',()=>p.setTaskDate(task.path,C.addDays(p.today(),1)));add('inWeek',()=>p.setTaskDate(task.path,C.addDays(p.today(),7)));add('chooseDate',()=>new DateModal(p,task).open());}
   add('duplicate',()=>p.duplicateTask(task.path));add('openNote',()=>p.app.workspace.openLinkText(task.path,'',false));if(task.source)add('openSource',()=>p.openSource(task));add('delete',()=>p.confirmDeleteTask(task));m.showAtMouseEvent(event);
  }
- renderResults(){if(this.mode==='calendar')this.renderCalendar();else this.renderBoard();}
+ renderResults(){if(this.mode==='archive')this.renderArchive();else if(this.mode==='calendar')this.renderCalendar();else this.renderBoard();}
+ renderArchive(){if(!this.archive){this.archive=el(this.content,'div','mpt-archive');}if(this.archive.parentElement!==this.content)this.archive=el(this.content,'div','mpt-archive');this.archive.empty();const t=k=>this.plugin.t(k),tasks=this.filtered().sort((a,b)=>String(b.archivedAt||'').localeCompare(String(a.archivedAt||'')));el(this.archive,'p','mpt-help',t('archiveHint'));if(!tasks.length)el(this.archive,'p','mpt-empty',t('empty'));for(const task of tasks.slice(0,this.doneLimit))this.card(this.archive,task,'archive');if(tasks.length>this.doneLimit)button(this.archive,t('showMore'),()=>{this.doneLimit+=50;this.renderArchive();});}
  renderQuickAdd(){const p=this.plugin,t=k=>p.t(k),row=el(this.content,'div','mpt-quick-add');const input=el(row,'input');input.placeholder=t('quickAdd');input.setAttribute('aria-label',t('quickAdd'));
   let busy=false;const add=async()=>{if(busy||!input.value.trim())return;busy=true;input.disabled=true;try{await p.saveTask(null,{title:input.value.trim(),date:'',deadline:'',project:this.filter.project&&this.filter.project!=='__none'?`[[${this.filter.project}]]`:'',priority:this.filter.priority||p.settings.defaultPriority,recurrence:'none',subtasks:[]},'');input.value='';}finally{busy=false;input.disabled=false;}};
   input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();return p.run(add);}};button(row,t('newTask'),()=>p.run(add));
@@ -162,7 +165,7 @@ class Board extends ItemView {
  }
  renderProjects(){const p=this.plugin,t=k=>p.t(k);button(this.content,t('newProject'),()=>new ProjectModal(p).open(),'mpt-btn mod-cta');const grid=el(this.content,'div','mpt-project-grid');if(!this.projects.length)el(grid,'p','',t('noProjects'));
   for(const project of this.projects){const card=el(grid,'article','mpt-project-card');card.style.borderTopColor=project.color||'#4f46e5';button(card,project.title,()=>{this.mode='tasks';this.filter.project=C.key(project.path);this.render();},'mpt-card-title');
-   const tasks=this.tasks.filter(x=>C.key(x.project)===C.key(project.path));el(card,'p','mpt-meta',`${t('countOpen')}: ${tasks.filter(x=>!x.completed).length} · ${t('countDone')}: ${tasks.filter(x=>x.completed).length}`);
+   const tasks=this.tasks.filter(x=>!x.archived&&C.key(x.project)===C.key(project.path));el(card,'p','mpt-meta',`${t('countOpen')}: ${tasks.filter(x=>!x.completed).length} · ${t('countDone')}: ${tasks.filter(x=>x.completed).length}`);
    const a=el(card,'div','mpt-actions');button(a,t('edit'),()=>new ProjectModal(p,project).open());button(a,t('delete'),()=>p.confirmDeleteProject(project));}
  }
 }
@@ -281,6 +284,7 @@ class MyProjectTasksFree extends Plugin {
    if(left!==undefined&&right!==undefined&&(order===left||order===right||left===right)){for(let n=0;n<items.length;n++){const r=await this.entity(items[n].path);await this.write(r,{sortOrder:(n+1)*1000});}order=at*1000+500;}}}
   const preserveSchedule=old.recurrence!=='none'?{mptAnchor:old.mptAnchor||old.date||this.today(),mptScheduled:old.mptScheduled||old.date||this.today()}:{};
   await this.write(old,{...preserveSchedule,...changes,...(current!==target?{listId:target}:{}),sortOrder:order,updatedAt:this.today()});this.refreshViews();});}
+ async setArchived(path,archived){return this.serial(async()=>{const old=await this.entity(path);if(old.archived===archived)return;await this.write(old,{archived,archivedAt:archived?this.today():'',updatedAt:this.today()});this.refreshViews();});}
  async restore(path){return this.serial(async()=>{let old=await this.entity(path);if(old.mptNextPending){await this.ensureNext(old);old=await this.entity(path);}if(!old.completed&&!old.archived)return;
   const changes=C.movement(old,'',this.today(),true,this.settings);await this.write(old,{...changes,listId:C.bucket({...old,...changes},this.today(),this.settings),updatedAt:this.today()});if(old.mptNextId)new Notice(this.t('restoredOnce'));this.refreshViews();});}
  async shiftDay(path){return this.serial(async()=>{const old=await this.entity(path);const base=C.asDate(old.date&&old.date>this.today()?old.date:this.today());base.setDate(base.getDate()+1);const date=C.iso(base);
