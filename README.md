@@ -2,6 +2,28 @@
 
 A local task board and monthly calendar for Obsidian. Unlimited tasks and projects, no account, network access or activation required. Data remains in Markdown files in your vault.
 
+## Screenshots
+
+### Task board — organize work by planned date
+
+![Task board — organize work by planned date](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14874&w=3840&q=75)
+
+### Monthly calendar — planned dates and deadlines
+
+![Monthly calendar — planned dates and deadlines](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14875&w=3840&q=75)
+
+### Task editor — priorities and recurring tasks
+
+![Task editor — priorities and recurring tasks](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14876&w=3840&q=75)
+
+### Projects — group tasks and choose colors
+
+![Projects — group tasks and choose colors](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14877&w=3840&q=75)
+
+### Settings — language and optional board columns
+
+![Settings — language and optional board columns](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14878&w=3840&q=75)
+
 ## Features
 
 - Backlog, Today and Done, plus optional Week and Month columns enabled independently in settings (both off by default); project colors, three priorities, descriptions and checklists.
