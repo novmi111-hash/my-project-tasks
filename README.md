@@ -1,8 +1,29 @@
-# My Project Tasks Free 2.5.0
+# My Project Tasks Free
 
-A local task board and monthly calendar for Obsidian. Unlimited tasks and projects, no account, network access or activation required. Data remains in Markdown files in your vault.
+**Plan your day, organize projects, and keep your tasks inside Obsidian.**
 
-## Features
+My Project Tasks Free brings a visual Kanban-style board and a monthly calendar into your Obsidian vault. Track personal and work tasks without juggling separate apps. Your tasks and projects stay in local Markdown files—no account or activation required.
+
+### At a glance
+
+- **Visual task board:** Backlog, Today, Done, plus optional Week and Month columns.
+- **Calendar planning:** view tasks by planned date or deadline; drag tasks to reschedule.
+- **Project organization:** projects, color labels, priorities, checklists, and quick task entry.
+- **Repeating tasks:** daily, weekly, and monthly recurrence after completion.
+- **Stay organized:** search, filters, task duplication, and a manual Archive tab.
+- **Six languages:** English, Русский, Español, Deutsch, Português (Brasil), and Français.
+
+### Install in Obsidian
+
+1. Open **Settings → Community plugins → Browse**.
+2. Search for **My Project Tasks Free**.
+3. Select **Install**, then **Enable**.
+4. Open the task board using the ribbon icon or the command palette.
+
+[View the community listing](https://community.obsidian.md/plugins/my-project-tasks) · [Русская документация](README_RU.md) · [Releases](https://github.com/novmi111-hash/my-project-tasks/releases) · [Report an issue](https://github.com/novmi111-hash/my-project-tasks/issues)
+
+## Features in detail
+
 
 - Backlog, Today and Done, plus optional Week and Month columns enabled independently in settings (both off by default); project colors, three priorities, descriptions and checklists.
 - Monthly calendar with previous/next month and Today controls. Click a day number or empty day space to create a task; click a task to edit it.
@@ -37,7 +58,7 @@ Folder checks use physical storage when the Obsidian index is not ready, avoidin
 
 Install through Obsidian’s Community plugins catalog or download main.js, manifest.json and styles.css from the GitHub Release assets. For manual updates disable the plugin and replace only those three files in `.obsidian/plugins/my-project-tasks/` (or your custom configuration directory). Keep `data.json` and the task/project folders. Enable the plugin and open it with the ribbon icon or command palette.
 
-Back up your vault before upgrading, especially from 2.1.5. The plugin ID is unchanged: do not run both editions simultaneously. No bulk migration runs at startup. Old properties remain in files, including previous list and archive settings; Free does not provide custom columns or a separate archive.
+Back up your vault before upgrading, especially from 2.1.5. The plugin ID is unchanged: do not run both editions simultaneously. No bulk migration runs at startup. Old properties remain in files, including previous list and archive settings; Free does not provide customizable columns or automatic archiving; version 2.5.0 includes a dedicated tab for manually archived tasks.
 
 ## Data protection and verification
 
