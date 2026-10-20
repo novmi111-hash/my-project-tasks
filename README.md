@@ -13,6 +13,7 @@ A local task board and monthly calendar for Obsidian. Unlimited tasks and projec
 - Task menu: tomorrow, in one week, choose date, duplicate and existing task actions. Tomorrow and one week are counted from today.
 - Completed titles are struck through and muted. Calendar can hide completed tasks; Done history is loaded in batches of 50.
 - Daily, weekly and monthly recurrence after completion, retaining completed instances.
+- Manual archive with search, filters and restoration. Archived tasks stay in your vault and are hidden from the board and calendar; archiving and restoration support undo.
 - Six interface languages: English, Russian, Spanish, German, Brazilian Portuguese and French. Auto follows Obsidian; manual language choice persists. User content is not translated.
 
 ## Undo and duplicates
@@ -37,7 +38,7 @@ Folder checks use physical storage when the Obsidian index is not ready, avoidin
 
 Install through Obsidian’s Community plugins catalog or download main.js, manifest.json and styles.css from the GitHub Release assets. For manual updates disable the plugin and replace only those three files in `.obsidian/plugins/my-project-tasks/` (or your custom configuration directory). Keep `data.json` and the task/project folders. Enable the plugin and open it with the ribbon icon or command palette.
 
-Back up your vault before upgrading, especially from 2.1.5. The plugin ID is unchanged: do not run both editions simultaneously. No bulk migration runs at startup. Old properties remain in files, including previous list and archive settings; Free does not provide custom columns or a separate archive.
+Back up your vault before upgrading, especially from 2.1.5. The plugin ID is unchanged: do not run both editions simultaneously. No bulk migration runs at startup. Old properties remain in files, including previous list and archive settings; Free does not provide custom columns. Version 2.5.0 includes a separate Archive tab with manual archiving and restoration; automatic archiving and retention settings are not included.
 
 ## Data protection and verification
 
