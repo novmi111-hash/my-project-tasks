@@ -2,11 +2,16 @@
 
 A local task board and monthly calendar for Obsidian. Unlimited tasks and projects, no account, network access or activation required. Data remains in Markdown files in your vault.
 
-## Screenshots
-
-### Task board — organize work by planned date
-
 ![Task board — organize work by planned date](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14874&w=3840&q=75)
+
+## Quick start
+
+1. **Install the plugin.** Open [My Project Tasks Free in the community directory](https://community.obsidian.md/plugins/my-project-tasks), click **Add to Obsidian**, then install and enable it. Open the plugin using its ribbon icon or the command palette.
+2. **Create a project.** Open **Projects → + Project**, enter a name such as “Work” or “Personal”, choose a color, and click **Save**.
+3. **Add your first task.** Open **Tasks → + Task**, enter a title, select your project, and optionally set a planned date or priority. Click **Save**. Your task appears on the board; dated tasks also appear in the calendar when viewing planned dates.
+
+<details>
+<summary>More screenshots: calendar, task editor, projects and settings</summary>
 
 ### Monthly calendar — planned dates and deadlines
 
@@ -23,6 +28,8 @@ A local task board and monthly calendar for Obsidian. Unlimited tasks and projec
 ### Settings — language and optional board columns
 
 ![Settings — language and optional board columns](https://community.obsidian.md/_next/image?url=%2Fapi%2Fimages%2F14878&w=3840&q=75)
+
+</details>
 
 ## Features
 
